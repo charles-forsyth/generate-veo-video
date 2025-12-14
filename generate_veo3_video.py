@@ -317,8 +317,18 @@ Examples:
         print(f"[INFO] Rerunning: {entry['prompt']}")
         args.prompt = entry["prompt"]
 
+    # Check for piped input if prompt is missing
+    if not args.prompt and not sys.stdin.isatty():
+        try:
+            piped_input = sys.stdin.read().strip()
+            if piped_input:
+                args.prompt = piped_input
+                print(f"[INFO] Using piped input as prompt: \"{args.prompt[:50]}...\"")
+        except Exception as e:
+            print(f"[WARN] Failed to read from stdin: {e}")
+
     if not args.prompt and not args.video: 
-        parser.error("Prompt is required.")
+        parser.error("Prompt is required (provide as argument or via pipe).")
 
     # Execute with Robust Error Handling
     try:
