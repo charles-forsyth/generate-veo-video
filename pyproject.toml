@@ -17,7 +17,6 @@ dependencies = [
 
 [project.scripts]
 generate-veo = "generate_veo3_video:main"
-deep-research = "deep_research:main"
 
 [build-system]
 requires = ["hatchling"]
