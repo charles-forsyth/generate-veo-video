@@ -248,9 +248,7 @@ def main():
     # Outputs & Config
     parser.add_argument("--output-file", "-o", type=str, default=None, help="Output filename.")
     parser.add_argument("--duration", type=int, choices=[4, 6, 8], default=8, help="Duration (4, 6, 8). Default 8.")
-    parser.add_argument("--resolution", type=str, choices=["720p", "1080p"], default="720p", help="Resolution.")
     parser.add_argument("--aspect-ratio", type=str, choices=["16:9", "9:16"], default="16:9", help="Aspect ratio.")
-    parser.add_argument("--no-enhance", action="store_true", help="Disable prompt enhancement.")
     parser.add_argument("--negative-prompt", type=str, help="Negative prompt.")
 
     # Inputs
@@ -259,9 +257,6 @@ def main():
     parser.add_argument("--ref-images", type=str, nargs='+', help="Path(s) to reference images (max 3).")
     parser.add_argument("--video", type=str, help="Path to input video for extension (must be Veo-generated).")
     
-    # Audio
-    parser.add_argument("--no-audio", action="store_true", help="Ignored (Veo 3.1 always generates audio).")
-
     # History
     parser.add_argument("--history", action="store_true", help="Display prompt history.")
     parser.add_argument("--rerun", type=int, default=None, help="Rerun a prompt from history by number.")
