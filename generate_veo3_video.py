@@ -4,8 +4,7 @@ import os
 import argparse
 import re
 import json
-import base64
-from pathlib import Path
+import mimetypes
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -48,13 +47,11 @@ def display_history(history):
 def get_client():
     """Creates the GenAI client with appropriate authentication."""
     if API_KEY:
-        print(f"[INFO] Using API Key authentication.")
+        print("[INFO] Using API Key authentication.")
         return genai.Client(api_key=API_KEY)
     else:
         print(f"[INFO] Using Vertex AI (ADC) authentication for project {PROJECT_ID}")
         return genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
-
-import mimetypes
 
 def load_image_from_path(path):
     """Loads a local image file and returns a types.Image object with MIME type."""
@@ -171,10 +168,14 @@ def generate_video(args):
 
     print(f"[INFO] Sending request to {MODEL_ID}...")
     print(f"  Prompt: {args.prompt}")
-    if image_input: print("  Input: Image")
-    if last_frame_input: print("  Input: Last Frame")
-    if ref_images: print(f"  Input: {len(ref_images)} Reference Images")
-    if video_input: print("  Input: Video (Extension)")
+    if image_input:
+        print("  Input: Image")
+    if last_frame_input:
+        print("  Input: Last Frame")
+    if ref_images:
+        print(f"  Input: {len(ref_images)} Reference Images")
+    if video_input:
+        print("  Input: Video (Extension)")
 
     try:
         operation = client.models.generate_videos(
@@ -212,7 +213,7 @@ def generate_video(args):
                 sanitized_prompt = re.sub(r'[^a-zA-Z0-9_]+', '_', args.prompt or "video")[:50]
                 filename = f"{sanitized_prompt}.mp4"
             
-            print(f"[INFO] Downloading video...")
+            print("[INFO] Downloading video...")
             # Use client.files.download() to get bytes directly.
             # Docs: client.files.download(file=generated_video.video) returns the bytes content.
             
