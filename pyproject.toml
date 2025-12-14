@@ -1,6 +1,6 @@
 [project]
 name = "generate-veo-video"
-version = "0.2.3"
+version = "0.2.4"
 description = "A CLI tool for generating videos using Google's Veo 3.1 model and Gemini Deep Research."
 readme = "README.md"
 requires-python = ">=3.10"
