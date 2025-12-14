@@ -125,12 +125,16 @@ def test_generate_video_save(mock_client, mock_args):
     # Mock download
     mock_client.files.download.return_value = mock_video_bytes
     
-    with patch("builtins.open", mock_open()) as mock_file:
+    with patch("builtins.open", mock_open()) as mock_file, \
+         patch(f'{MODULE_PATH}.os.rename') as mock_rename:
         generate_video(mock_args)
         
         # Verify download call
         mock_client.files.download.assert_called_with(file="gs://video/uri")
         
         # Verify file write
-        mock_file.assert_called_with("test_output.mp4", "wb")
+        mock_file.assert_called_with("test_output.mp4.part", "wb")
         mock_file().write.assert_called_with(mock_video_bytes)
+        
+        # Verify os.rename call
+        mock_rename.assert_called_with("test_output.mp4.part", "test_output.mp4")
