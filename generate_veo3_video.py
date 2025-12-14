@@ -5,6 +5,7 @@ import argparse
 import re
 import json
 import mimetypes
+import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -23,6 +24,7 @@ LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
 API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_ID = "veo-3.1-generate-preview"
 HISTORY_FILE = ".veo_history.json"
+POLLING_TIMEOUT_SEC = 900 # 15 minutes max wait time
 
 def load_history():
     """Loads the prompt history from the history file."""
@@ -122,23 +124,12 @@ def generate_video(args):
     # Video Extension Input
     video_input = None
     if args.video:
-        # For CLI, we likely need to upload the file first if it's a path
-        # However, the SDK might expect a types.Video object from a previous response.
-        # Let's try to upload it and use the file object.
-        # Note: The Python SDK for `generate_videos` `video` param expects `types.Video` or compatible.
-        # A File API object might work if wrapped. 
-        # But per docs: "The video should come from a previous generation, like operation.response.generated_videos[0].video"
-        # We'll try uploading.
         print("[WARN] Video extension via CLI implies uploading a local file. Only Veo-generated videos are supported.")
         f_obj = upload_video_for_extension(client, args.video)
         if f_obj:
-            # We need to pass the file content/URI. 
-            # The client.models.generate_videos `video` param usually takes the file URI or object.
-            # We will pass the file object directly if SDK supports it, or try to wrap it.
             video_input = f_obj 
 
     # Configure the video generation
-    # Note: person_generation="allow_adult" is required for Image-to-Video/Interpolation/Ref Images in some regions
     person_gen = "allow_all" if not (image_input or last_frame_input or ref_images) else "allow_adult"
     
     config = types.GenerateVideosConfig(
@@ -146,25 +137,17 @@ def generate_video(args):
         number_of_videos=1,
         duration_seconds=args.duration,
         person_generation=person_gen,
-        # enhance_prompt=not args.no_enhance, # Not supported in Veo 3.1
-        # generate_audio=not args.no_audio, # Removed as Veo 3.1 is native audio always on
         negative_prompt=args.negative_prompt,
     )
 
     if args.seed:
         config.seed = args.seed
 
-    # Add specific config fields
     if last_frame_input:
         config.last_frame = last_frame_input
     
     if ref_images:
         config.reference_images = ref_images
-
-    # Note: 'resolution' parameter is documented but currently returns "not supported in Gemini API" error.
-    # We will rely on the model's default (720p).
-    # if args.resolution:
-    #      config.resolution = args.resolution
 
     print(f"[INFO] Sending request to {MODEL_ID}...")
     print(f"  Prompt: {args.prompt}")
@@ -187,18 +170,34 @@ def generate_video(args):
         )
     except Exception as e:
         print(f"[ERROR] API Request Failed: {e}")
-        return
+        return None
 
     print(f"[INFO] Operation started: {operation.name}")
 
-    # Poll the operation status
+    # Polling Loop with Timeout
+    start_time = time.time()
+    
     while not operation.done:
-        print("  Generating... (checking in 10s)")
-        time.sleep(10)
+        elapsed = time.time() - start_time
+        if elapsed > POLLING_TIMEOUT_SEC:
+            print(f"\n[ERROR] Operation timed out after {POLLING_TIMEOUT_SEC} seconds.")
+            return None
+
+        # Smart polling interval
+        if elapsed < 60:
+            sleep_time = 10
+        elif elapsed < 120:
+            sleep_time = 15
+        else:
+            sleep_time = 30
+            
+        print(f"  Generating... ({int(elapsed)}s elapsed, checking in {sleep_time}s)")
+        time.sleep(sleep_time)
+        
         try:
             operation = client.operations.get(operation)
         except Exception as e:
-            print(f"  [WARN] Status check failed: {e}")
+            print(f"  [WARN] Status check failed (retrying): {e}")
 
     if operation.result:
         print("[INFO] Generation Success!")
@@ -214,23 +213,21 @@ def generate_video(args):
                 filename = f"{sanitized_prompt}.mp4"
             
             print("[INFO] Downloading video...")
-            # Use client.files.download() to get bytes directly.
-            # Docs: client.files.download(file=generated_video.video) returns the bytes content.
             
             try:
-                # Try passing the name if it's an object
                 file_ref = generated_video.video.name if hasattr(generated_video.video, 'name') else generated_video.video
                 content = client.files.download(file=file_ref)
             except AttributeError:
-                # If it's a string or dict?
                 content = client.files.download(file=generated_video.video)
 
-            with open(filename, "wb") as f:
+            # Atomic Write
+            temp_filename = filename + ".part"
+            with open(temp_filename, "wb") as f:
                 f.write(content)
-
+            
+            os.rename(temp_filename, filename)
             print(f"[INFO] Saved to: {filename}")
             
-            # History
             return {
                 "prompt": args.prompt,
                 "output_file": filename,
@@ -240,10 +237,14 @@ def generate_video(args):
             
         except Exception as e:
             print(f"[ERROR] Failed to save video: {e}")
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
+            return None
     else:
         print("[ERROR] Operation failed.")
         if operation.error:
             print(f"Error details: {operation.error}")
+        return None
 
 def main():
     epilog = """
@@ -315,18 +316,22 @@ Examples:
         entry = history[args.rerun - 1]
         print(f"[INFO] Rerunning: {entry['prompt']}")
         args.prompt = entry["prompt"]
-        # We don't restore all flags for simplicity unless stored. 
-        # Ideally we should, but for now we take the prompt.
 
-    if not args.prompt and not args.video: # Prompt is optional for Extension? No, usually required.
+    if not args.prompt and not args.video: 
         parser.error("Prompt is required.")
 
-    # Execute
-    result = generate_video(args)
-    
-    if result:
-        history.append(result)
-        save_history(history)
+    # Execute with Robust Error Handling
+    try:
+        result = generate_video(args)
+        if result:
+            history.append(result)
+            save_history(history)
+    except KeyboardInterrupt:
+        print("\n\n[WARN] Generation cancelled by user (Ctrl+C). Exiting...")
+        sys.exit(130) # Standard exit code for SIGINT
+    except Exception as e:
+        print(f"\n[CRITICAL ERROR] An unexpected error occurred: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

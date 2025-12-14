@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch, mock_open
 import argparse
-from generate_veo3_video import generate_video, load_image_from_path, main
+from generate_veo3_video import generate_video, load_image_from_path
 from google.genai import types
 
 # Mock constants from the script
