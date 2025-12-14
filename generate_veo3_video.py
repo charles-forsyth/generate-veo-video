@@ -154,6 +154,9 @@ def generate_video(args):
         negative_prompt=args.negative_prompt,
     )
 
+    if args.seed:
+        config.seed = args.seed
+
     # Add specific config fields
     if last_frame_input:
         config.last_frame = last_frame_input
@@ -226,7 +229,13 @@ def generate_video(args):
 
             print(f"[INFO] Saved to: {filename}")
             
-            # History
+            # Audio
+    parser.add_argument("--no-audio", action="store_true", help="Ignored (Veo 3.1 always generates audio).")
+
+    # Advanced
+    parser.add_argument("--seed", type=int, help="Seed for random number generation (optional).")
+
+    # History
             return {
                 "prompt": args.prompt,
                 "output_file": filename,
@@ -242,7 +251,35 @@ def generate_video(args):
             print(f"Error details: {operation.error}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate a video using the Vertex AI VEO 3.1 model.")
+    epilog = """
+Examples:
+---------
+1. Text-to-Video:
+   %(prog)s "A cinematic drone shot of a futuristic city at night, neon lights, rain."
+   %(prog)s "A cute robot gardening in a sunlit greenhouse." --duration 4
+
+2. Image-to-Video (Animation):
+   %(prog)s "Make the waves move and the clouds drift." --image ./ocean.png
+   %(prog)s "The character turns their head and smiles." --image ./portrait.jpg
+
+3. Style Transfer (Reference Images):
+   %(prog)s "A fashion model walking on a runway." --ref-images ./style_dress.png ./style_glasses.png
+   %(prog)s "A cyberpunk street scene." --ref-images ./blade_runner_ref.jpg
+
+4. Morphing (First & Last Frame):
+   %(prog)s "Morph this sketch into a photorealistic drawing." --image ./sketch.png --last-frame ./final.png
+   %(prog)s "A car transforming into a robot." --image ./car.png --last-frame ./robot.png
+
+5. Video Extension:
+   %(prog)s "The drone continues flying over the mountains." --video ./previous_veo_clip.mp4
+   %(prog)s "The character walks out of the frame." --video ./generated_clip.mp4
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Generate a video using the Vertex AI VEO 3.1 model.",
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("prompt", type=str, nargs='?', default=None, help="The text prompt for the video.")
     
     # Outputs & Config
@@ -257,6 +294,12 @@ def main():
     parser.add_argument("--ref-images", type=str, nargs='+', help="Path(s) to reference images (max 3).")
     parser.add_argument("--video", type=str, help="Path to input video for extension (must be Veo-generated).")
     
+    # Audio
+    parser.add_argument("--no-audio", action="store_true", help="Ignored (Veo 3.1 always generates audio).")
+
+    # Advanced
+    parser.add_argument("--seed", type=int, help="Seed for random number generation (optional).")
+
     # History
     parser.add_argument("--history", action="store_true", help="Display prompt history.")
     parser.add_argument("--rerun", type=int, default=None, help="Rerun a prompt from history by number.")
