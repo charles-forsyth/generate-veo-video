@@ -2,7 +2,7 @@
 
 A powerful CLI tool for generating videos using Google's **Veo 3.1** model via the Vertex AI / Gemini API.
 
-**Version:** 0.2.1
+**Version:** 0.2.2
 
 ## Features
 
