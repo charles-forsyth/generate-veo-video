@@ -229,13 +229,7 @@ def generate_video(args):
 
             print(f"[INFO] Saved to: {filename}")
             
-            # Audio
-    parser.add_argument("--no-audio", action="store_true", help="Ignored (Veo 3.1 always generates audio).")
-
-    # Advanced
-    parser.add_argument("--seed", type=int, help="Seed for random number generation (optional).")
-
-    # History
+            # History
             return {
                 "prompt": args.prompt,
                 "output_file": filename,
