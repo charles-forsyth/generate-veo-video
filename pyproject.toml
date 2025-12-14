@@ -29,4 +29,5 @@ packages = ["."]
 [tool.uv]
 dev-dependencies = [
     "pytest",
+    "ruff",
 ]
