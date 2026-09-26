@@ -1,6 +1,6 @@
 [project]
 name = "generate-veo-video"
-version = "0.2.5"
+version = "0.3.0"
 description = "A CLI tool for generating videos using Google's Veo 3.1 model and Gemini Deep Research."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -9,7 +9,7 @@ authors = [
   {name = "Charles Forsyth", email = "charles.forsyth@example.com"}
 ]
 dependencies = [
-    "google-genai>=0.2.0",
+    "google-genai>=1.50.0",
     "python-dotenv>=1.0.0",
     "rich>=13.0.0",
     "pydantic>=2.0.0",

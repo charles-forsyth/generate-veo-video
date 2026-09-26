@@ -16,7 +16,8 @@ A powerful CLI tool for generating videos using Google's **Veo 3.1** model via t
 - **Reference Images**: Use up to 3 reference images to guide style and character consistency.
 - **First/Last Frame Control**: Interpolate between a starting and ending frame.
 - **Video Extension**: Extend existing Veo-generated videos.
-- **Environment Config**: Loads API keys and project settings from `.env` files (local or home directory).
+- **Own config file**: Loads its API key from `~/.config/generate-veo/.env` (or a `.env` in the current directory). It never reads other tools' config files.
+- **Model tiers**: `--model standard|fast|lite` picks Veo 3.1, 3.1 Fast or 3.1 Lite (or set `VEO_MODEL` in the config file).
 
 ## Installation
 
@@ -33,7 +34,7 @@ uv tool upgrade generate-veo-video
 
 ## Configuration
 
-The tool expects the following environment variables. You can set them in a `.env` file in your home directory (`~/.env`) or the current working directory.
+The tool expects the following environment variables. Put them in `~/.config/generate-veo/.env` (chmod 600), or in a `.env` in the current working directory. Use an API key restricted to the Generative Language API.
 
 ```bash
 GOOGLE_CLOUD_PROJECT=your-project-id

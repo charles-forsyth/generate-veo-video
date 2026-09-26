@@ -12,17 +12,23 @@ from google.genai import types
 
 # --- ENV & CONFIG SETUP ---
 # Load .env from various locations
-load_dotenv() # Current dir
+# The tool reads only its own config file (plus a .env in the current directory),
+# so it never borrows another tool's API key.
 xdg_config_home = os.getenv("XDG_CONFIG_HOME", os.path.join(os.path.expanduser("~"), ".config"))
-user_config_path = os.path.join(xdg_config_home, "deepresearch", ".env")
-load_dotenv(user_config_path) # DeepResearch config
-load_dotenv(os.path.join(os.path.expanduser("~"), ".env")) # Home dir .env
+CONFIG_PATH = os.path.join(xdg_config_home, "generate-veo", ".env")
+load_dotenv(CONFIG_PATH)
+load_dotenv(os.path.join(os.getcwd(), ".env"))  # Only a .env in the current dir; never walk up to ~/.env
 
 # Configuration with Env Fallbacks
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "ucr-research-computing")
 LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
 API_KEY = os.getenv("GEMINI_API_KEY")
-MODEL_ID = "veo-3.1-generate-preview"
+MODELS = {
+    "standard": "veo-3.1-generate-preview",
+    "fast": "veo-3.1-fast-generate-preview",
+    "lite": "veo-3.1-lite-generate-preview",
+}
+MODEL_ID = os.getenv("VEO_MODEL", MODELS["standard"])
 HISTORY_FILE = ".veo_history.json"
 POLLING_TIMEOUT_SEC = 900 # 15 minutes max wait time
 
@@ -48,6 +54,9 @@ def display_history(history):
 
 def get_client():
     """Creates the GenAI client with appropriate authentication."""
+    # The key comes from our own config; drop any GOOGLE_API_KEY inherited from the shell
+    # so the SDK cannot pick a different key.
+    os.environ.pop("GOOGLE_API_KEY", None)
     if API_KEY:
         print("[INFO] Using API Key authentication.")
         return genai.Client(api_key=API_KEY)
@@ -295,12 +304,18 @@ Examples:
 
     # Advanced
     parser.add_argument("--seed", type=int, help="Seed for random number generation (optional).")
+    parser.add_argument("--model", choices=sorted(MODELS), default=None,
+                        help="Veo 3.1 tier: standard (best), fast, or lite (cheapest). Default standard, or VEO_MODEL in the config file.")
 
     # History
     parser.add_argument("--history", action="store_true", help="Display prompt history.")
     parser.add_argument("--rerun", type=int, default=None, help="Rerun a prompt from history by number.")
 
     args = parser.parse_args()
+
+    global MODEL_ID
+    if args.model:
+        MODEL_ID = MODELS[args.model]
 
     # Load History
     history = load_history()
