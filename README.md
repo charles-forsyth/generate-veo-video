@@ -1,5 +1,7 @@
 # Generate Veo Video CLI
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23755693.svg)](https://doi.org/10.5281/zenodo.23755693)
+
 [![CI](https://github.com/charles-forsyth/generate-veo-video/actions/workflows/ci.yml/badge.svg)](https://github.com/charles-forsyth/generate-veo-video/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
