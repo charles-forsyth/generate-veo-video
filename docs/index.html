@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate-Veo-Video: Vertex AI Veo 3.1 CLI</title>
+  <meta name="description" content="A professional CLI tool for generating and extending videos using Google's Veo 3.1 models (standard, fast, lite) via the Gemini Developer API or Vertex AI.">
+  <meta name="author" content="Charles E. Forsyth III">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.15);
+      --accent-subtle: #4f46e5;
+      --terminal-bg: #030712;
+      --code-bg: #1e293b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    header {
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #fff;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-subtle), var(--accent));
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: #fff;
+    }
+    .nav-links { display: flex; gap: 24px; font-size: 0.95rem; align-items: center; }
+    .nav-links a { color: var(--text-muted); }
+    .nav-links a:hover { color: #fff; text-decoration: none; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--accent-subtle);
+      color: #fff;
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover {
+      text-decoration: none;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .btn-secondary {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      text-decoration: none;
+    }
+
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+    }
+    .badges {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .hero h1 {
+      font-size: clamp(2.3rem, 5vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    .hero-gradient {
+      background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 32px;
+    }
+    .install-box {
+      max-width: 620px;
+      margin: 0 auto 36px;
+      background: var(--terminal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+    }
+    .install-box code { color: var(--accent); }
+    .install-copy {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .install-copy:hover { color: #fff; background: var(--card-border); }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 80px;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+    .feature-icon {
+      font-size: 1.75rem;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .showcase { margin-bottom: 80px; }
+    .terminal-window {
+      background: var(--terminal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .terminal-header {
+      background: #111827;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .terminal-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: 8px;
+    }
+    .terminal-img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 80px;
+    }
+    .code-card {
+      background: var(--terminal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .code-card h4 {
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .code-card p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .code-block {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      padding: 12px;
+      border-radius: 6px;
+      color: var(--accent);
+      overflow-x: auto;
+    }
+
+    .citation-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 80px;
+    }
+    .citation-box pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      background: var(--terminal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      color: #e2e8f0;
+      overflow-x: auto;
+      margin-top: 16px;
+    }
+
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 40px 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <div class="brand-icon">G</div>
+        <span>generate-veo</span>
+      </div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#terminal">Terminal Tour</a>
+        <a href="#examples">Examples</a>
+        <a href="#citation">Citation</a>
+        <a href="https://github.com/charles-forsyth/generate-veo-video" class="btn btn-secondary" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="badges">
+        <span class="badge">v0.3.0</span>
+        <span class="badge">Python 3.12+</span>
+        <span class="badge">MIT License</span>
+        <span class="badge">CLI</span>
+      </div>
+      <h1>Generate-Veo-Video: <span class="hero-gradient">Professional Text-to-Video, Animation, and Interpolation CLI</span></h1>
+      <p>A professional CLI tool for generating and extending videos using Google's Veo 3.1 models (standard, fast, lite) via the Gemini Developer API or Vertex AI.</p>
+      
+      <div class="install-box">
+        <code>uv tool install --python 3.12 git+https://github.com/charles-forsyth/generate-veo-video.git</code>
+        <button class="install-copy" onclick="navigator.clipboard.writeText('uv tool install --python 3.12 git+https://github.com/charles-forsyth/generate-veo-video.git')">Copy</button>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <a href="https://github.com/charles-forsyth/generate-veo-video" class="btn btn-primary" target="_blank" rel="noopener">View Repository</a>
+        <a href="#terminal" class="btn btn-secondary">Explore Terminal Output</a>
+      </div>
+    </section>
+
+    <section id="features">
+      <h2 class="section-title">Key Capabilities</h2>
+      <p class="section-desc">Designed and tuned for modern terminal workflows and automated pipelines.</p>
+      <div class="features">
+        
+        <div class="feature-card">
+          <div class="feature-icon">&#x2728;</div>
+          <h3>Veo 3.1 Text-to-Video</h3>
+          <p>Generate 720p video clips with synchronized audio from rich natural language descriptions.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#x2728;</div>
+          <h3>Image Animation & Morphing</h3>
+          <p>Animate static images or interpolate smoothly between first and last frames.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#x2728;</div>
+          <h3>Style & Reference Guidance</h3>
+          <p>Guide character consistency and visual aesthetics using up to 3 reference images.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#x2728;</div>
+          <h3>Veo Video Extension</h3>
+          <p>Extend previously generated clips for seamless multi-scene continuous playback.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="terminal" class="showcase">
+      <h2 class="section-title">Terminal Showcase</h2>
+      <p class="section-desc">Real, unmodified terminal outputs captured directly from the CLI engine.</p>
+      
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="terminal-title">generate-veo --help</span>
+        </div>
+        <img src="screenshots/generate-veo-help.png" alt="Generate-Veo CLI Manual & Workflows" class="terminal-img" loading="lazy">
+      </div>
+    </section>
+
+    <section id="examples">
+      <h2 class="section-title">Usage Examples</h2>
+      <p class="section-desc">Quick command recipes for terminal operations.</p>
+      <div class="examples-grid">
+        
+        <div class="code-card">
+          <h4>Text-to-Video</h4>
+          <p>Generate 8-second cinematic video with audio:</p>
+          <div class="code-block">generate-veo "A cinematic drone shot of a futuristic city at night, neon lights, rain." --duration 8</div>
+        </div>
+        <div class="code-card">
+          <h4>Image Animation</h4>
+          <p>Animate a static photograph:</p>
+          <div class="code-block">generate-veo "Make the waves move and the clouds drift." --image ./ocean.png</div>
+        </div>
+        <div class="code-card">
+          <h4>First-to-Last Frame Morph</h4>
+          <p>Smoothly morph between two frames:</p>
+          <div class="code-block">generate-veo "Morph sketch into photorealistic drawing." --image ./sketch.png --last-frame ./final.png</div>
+        </div>
+        <div class="code-card">
+          <h4>Reference Image Styling</h4>
+          <p>Style transfer using reference aesthetic:</p>
+          <div class="code-block">generate-veo "A cyberpunk street scene." --ref-images ./blade_runner_ref.jpg -m fast</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="citation" class="citation-box">
+      <h2 class="section-title">Citation</h2>
+      <p class="section-desc" style="margin-bottom: 16px;">If you use this tool in your research or applications, please cite:</p>
+      <p><strong>Forsyth, C. E. III (2026).</strong> <em>Generate-Veo-Video: Vertex AI Veo 3.1 CLI</em> (Version 0.3.0) [Computer software]. University of California, Riverside. https://github.com/charles-forsyth/generate-veo-video</p>
+      <pre><code>@software{forsyth2026generate_veo_video,
+  author       = {Forsyth, Charles E. III},
+  title        = {Generate-Veo-Video: Vertex AI Veo 3.1 CLI},
+  version      = {0.3.0},
+  year         = {2026},
+  publisher    = {GitHub},
+  affiliation  = {University of California, Riverside},
+  url          = {https://github.com/charles-forsyth/generate-veo-video}
+}</code></pre>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>generate-veo is open source under the <a href="https://github.com/charles-forsyth/generate-veo-video/blob/main/LICENSE">MIT License</a> &bull; Created by <a href="https://orcid.org/0000-0003-4872-0296" target="_blank" rel="noopener">Charles Forsyth</a>, University of California, Riverside.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
